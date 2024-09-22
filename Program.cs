@@ -48,10 +48,11 @@ namespace ConsoleApp2
             }
             else
             {
-                MDSever.Instance.Start();
+                //MDSever.Instance.Start();
+                MDWebServer.Instance.Start();
             }
 
-            
+
             //demo downloader
             MDReplayDownloader.Instance.Init();
 
@@ -64,7 +65,7 @@ namespace ConsoleApp2
             DotaClient.Instance.Reconnect();
 
             if (!DotaClient.Instance.IsLogonDota)
-            { 
+            {
                 Console.WriteLine("dota2 launch fail");
                 return;
             }
@@ -88,7 +89,7 @@ namespace ConsoleApp2
             //MDMovieMaker.Instance._input.SendText(@"\");
             Color color = Color.White;
             while (true)
-            { 
+            {
                 await Task.Delay(1000);
                 POINT cPOINT = MDTools.GetCursorPosition();
                 color = MDTools.GetPixelColor(cPOINT.X, cPOINT.Y);

@@ -7,6 +7,8 @@ using SteamKit2.GC.Dota.Internal;
 using System.Threading.Tasks;
 using static MetaDota.DotaReplay.MDReplayGenerator;
 using static SteamKit2.GC.Dota.Internal.CMsgProfileResponse;
+using System.Reflection.Emit;
+using Newtonsoft.Json;
 
 namespace MetaDota.DotaReplay
 {
@@ -31,7 +33,7 @@ namespace MetaDota.DotaReplay
                 {
                     generator.eReplayGenerateResult = MDReplayGenerator.EReplayGenerateResult.NotFindPlayer;
                 }
-                else if (!_analyst_demo(generator.demoFilePath, hero_name, slot, war_fog))
+                else if (!_analyst_demo(generator.demoFilePath, hero_name, slot, war_fog, generator))
                 {
                     generator.eReplayGenerateResult = MDReplayGenerator.EReplayGenerateResult.AnalystFail;
                 }
@@ -41,25 +43,38 @@ namespace MetaDota.DotaReplay
             generator.block = false;
         }
 
-        bool _analyst_demo(string demoFilePath, string hero_name, string slot, string war_fog)
+        bool _analyst_demo(string demoFilePath, string hero_name, string slot, string war_fog, MDReplayGenerator generator)
         {
             foreach (String file in Directory.GetFiles(ClientParams.REPLAY_CFG_DIR))
             {
                 File.Delete(file);
             }
 
-            using (Process demoP = new Process())
+            string momentsPath = Path.Combine(ClientParams.DEMO_DIR, $"{generator.match_id}.json");
+
+            string json = File.ReadAllText(momentsPath);
+            var data = JsonConvert.DeserializeObject<Data>(json) ?? new Data();
+
+            List<string> list = new List<string>();
+
+            for (int i = 0; i < data.data.Count; i++)
             {
-                demoP.StartInfo.FileName = "demo.exe";
-                demoP.StartInfo.UseShellExecute = false;
-                demoP.StartInfo.RedirectStandardInput = true;
-                demoP.StartInfo.Arguments = $"{demoFilePath} {hero_name} {slot} {war_fog}";
-                demoP.Start();
-                demoP.WaitForExit();
-                Console.WriteLine("demo analyst success");
+                var moment = data.data[i];
+
             }
+
+            //using (Process demoP = new Process())
+            //{
+            //    demoP.StartInfo.FileName = "demo.exe";
+            //    demoP.StartInfo.UseShellExecute = false;
+            //    demoP.StartInfo.RedirectStandardInput = true;
+            //    demoP.StartInfo.Arguments = $"{demoFilePath} {hero_name} {slot} {war_fog}";
+            //    demoP.Start();
+            //    demoP.WaitForExit();
+            //    Console.WriteLine("demo analyst success");
+            //}
             Console.WriteLine("demo analyst over");
-            return File.Exists(ClientParams.REPLAY_CFG_DIR + "/replayCfg.txt") && File.Exists(ClientParams.REPLAY_CFG_DIR + "/keyCfg.txt");
+            return true;// File.Exists(ClientParams.REPLAY_CFG_DIR + "/replayCfg.txt") && File.Exists(ClientParams.REPLAY_CFG_DIR + "/keyCfg.txt");
 
         }
 

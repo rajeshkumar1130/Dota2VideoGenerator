@@ -15,7 +15,7 @@ namespace MetaDota.DotaReplay
         public const int DOWNLOAD_CHECK_INTERVAL = 10000;
         public const string MATCH_REQUEST_FILE = "matchRequest.txt";
         public const string REPLAY_DIR = "replays";
-        public const string DEMO_DIR = "demos";
+        public const string DEMO_DIR = "C:\\Code\\woodota_rkn\\replays";
         public const string REPLAY_CFG_DIR = "replayCfg";
         public const string CONFIG_DIR = "config";
 
