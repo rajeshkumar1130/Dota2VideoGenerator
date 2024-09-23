@@ -140,7 +140,7 @@ namespace MetaDota.DotaReplay
                 {
                     List<string> cfg = new List<string>();
                     int ticks = (int)data.data[10 * i].Start;
-                    //cfg.Add($"demo_gototick {ticks}");
+                    cfg.Add($"demo_gototick {ticks}");
                     cfg.Add($"dota_spectator_hero_index {slot}");
                     cfg.Add($"dota_spectator_fog_of_war {war_fog}");
                     cfg.Add($"dota_spectator_mode 3");
@@ -168,7 +168,6 @@ namespace MetaDota.DotaReplay
 
                     for (int j = 10 * i; j < Math.Min(data.data.Count, 10 * (i + 1)); j++)
                     {
-                        await Task.Delay(2000);
                         _input.SendText(keys[j % 10].ToString());
                         Console.WriteLine(keys[j % 10].ToString());
                         var wait = (int)(data.data[j].End - data.data[j].Start)/30+10;
