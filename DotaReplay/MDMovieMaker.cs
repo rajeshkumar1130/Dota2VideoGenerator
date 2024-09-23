@@ -62,9 +62,21 @@ namespace MetaDota.DotaReplay
                 Console.ReadLine();
                 Console.Write("MDMovieMaker Init Success");
                 s2k = new Dictionary<string, Interceptor.Keys>() {
-                {"kp_0",Interceptor.Keys.Numpad0 },
-                {"kp_1",Interceptor.Keys.Numpad1 },
-                {"kp_2",Interceptor.Keys.Numpad2 },
+                {"b",Interceptor.Keys.B },
+                {"c",Interceptor.Keys.C },
+                {"d",Interceptor.Keys.D },
+                {"f",Interceptor.Keys.F },
+                {"g",Interceptor.Keys.G },
+                {"h",Interceptor.Keys.H },
+                {"j",Interceptor.Keys.J },
+                {"k",Interceptor.Keys.K },
+                {"l",Interceptor.Keys.L },
+                {"m",Interceptor.Keys.M },
+                {"n",Interceptor.Keys.N },
+                {"p",Interceptor.Keys.P },
+                {"v",Interceptor.Keys.V },
+                {"x",Interceptor.Keys.X },
+                {"z",Interceptor.Keys.Z },
                 {"kp_3",Interceptor.Keys.Numpad3 },
                 {"kp_4",Interceptor.Keys.Numpad4 },
                 {"kp_5",Interceptor.Keys.Numpad5 },
@@ -127,7 +139,7 @@ namespace MetaDota.DotaReplay
                 for (int i = 0; i < data.data.Count / 10 + 1; i++)
                 {
                     List<string> cfg = new List<string>();
-                    int ticks = (int)data.data[10 * i].Start * 30 + 7000;
+                    int ticks = (int)data.data[10 * i].Start;
                     //cfg.Add($"demo_gototick {ticks}");
                     cfg.Add($"dota_spectator_hero_index {slot}");
                     cfg.Add($"dota_spectator_fog_of_war {war_fog}");
@@ -136,7 +148,7 @@ namespace MetaDota.DotaReplay
 
                     for (int j = 10 * i; j < Math.Min(data.data.Count, 10 * (i + 1)); j++)
                     {
-                        ticks = (int)data.data[j].Start * 30 + 7000;
+                        ticks = (int)data.data[j].Start;
                         cfg.Add($"bind {keys[j % 10]} \"demo_gototick {ticks}\"");
                     }
                     cfg.Add($"bind x \"endmovie\"");
@@ -156,13 +168,17 @@ namespace MetaDota.DotaReplay
 
                     for (int j = 10 * i; j < Math.Min(data.data.Count, 10 * (i + 1)); j++)
                     {
+                        await Task.Delay(2000);
                         _input.SendText(keys[j % 10].ToString());
-                        var wait = (int)(data.data[j].End - data.data[j].Start);
+                        Console.WriteLine(keys[j % 10].ToString());
+                        var wait = (int)(data.data[j].End - data.data[j].Start)/30+10;
+                        Console.WriteLine(wait);
+
                         await Task.Delay(wait * 1000);
                     }
 
                     _input.SendText("x");
-                    await Task.Delay(2000);
+                    await Task.Delay(5000);
                 }
                 //check is in demo
 
