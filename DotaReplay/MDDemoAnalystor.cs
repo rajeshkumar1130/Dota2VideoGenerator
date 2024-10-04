@@ -100,7 +100,7 @@ namespace MetaDota.DotaReplay
                     return true;
                 }
             }
-            return false;
+            return true;
         }
 
     }

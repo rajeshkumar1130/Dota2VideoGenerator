@@ -112,7 +112,7 @@ namespace ConsoleApp2
                 await Task.Delay(ClientParams.DOWNLOAD_CHECK_INTERVAL);
                 if (requestQueue.Count > 0)
                 {
-                    File.WriteAllLines(ClientParams.MATCH_REQUEST_FILE, requestQueue.ToArray());
+                    //File.WriteAllLines(ClientParams.MATCH_REQUEST_FILE, requestQueue.ToArray());
                     requestStr = requestQueue.Dequeue();
                     if (!string.IsNullOrEmpty(requestStr))
                     {

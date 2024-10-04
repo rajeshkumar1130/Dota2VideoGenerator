@@ -17,6 +17,10 @@ using System.Numerics;
 using MetaDota.config;
 using ConsoleApp2;
 using Newtonsoft.Json;
+using System.Drawing.Imaging;
+using Newtonsoft.Json.Linq;
+using Tesseract;
+using ImageFormat = System.Drawing.Imaging.ImageFormat;
 
 namespace MetaDota.DotaReplay
 {
@@ -28,6 +32,8 @@ namespace MetaDota.DotaReplay
         private string _keyFilePath = "";
 
         private Dictionary<string, Interceptor.Keys> s2k;
+        private int offset = 150;
+        int add = 15;
 
         public override async Task Init()
         {
@@ -135,24 +141,39 @@ namespace MetaDota.DotaReplay
                 var data = JsonConvert.DeserializeObject<Data>(json) ?? new Data();
                 string hero_name, slot, war_fog;
                 _prepareAnalystParams(generator, out hero_name, out slot, out war_fog);
-
+                Console.WriteLine($"Hero Name: {hero_name}");
+                if(!string.IsNullOrEmpty(hero_name) )
+                {
+                    offset = 300;
+                }
+                int prev = 0;
                 for (int i = 0; i < data.data.Count / 10 + 1; i++)
                 {
                     List<string> cfg = new List<string>();
-                    int ticks = (int)data.data[10 * i].Start;
+                    int ticks = (int)data.data[10 * i].Start- offset;
                     cfg.Add($"demo_gototick {ticks}");
-                    cfg.Add($"dota_spectator_hero_index {slot}");
-                    cfg.Add($"dota_spectator_fog_of_war {war_fog}");
-                    cfg.Add($"dota_spectator_mode 3");
+                    if (i == 0 && !string.IsNullOrEmpty(hero_name))
+                    {
+                        cfg.Add($"dota_spectator_hero_index {slot}");
+                        cfg.Add($"dota_spectator_fog_of_war {war_fog}");
+                        cfg.Add($"dota_spectator_mode 3");
+                    }
+                    else if (i == 0)
+                    {
+                        //cfg.Add($"dota_spectator_mode 0");
+                    }
+
                     cfg.Add($"startmovie ../../../../../movie/{generator.match_id}-{i} mp4");
 
                     for (int j = 10 * i; j < Math.Min(data.data.Count, 10 * (i + 1)); j++)
                     {
-                        ticks = (int)data.data[j].Start;
+                        ticks = (int)data.data[j].Start- offset;
+                        ticks = Math.Max(ticks, prev);
+                        prev = (int)data.data[j].End + add*30;
                         cfg.Add($"bind {keys[j % 10]} \"demo_gototick {ticks}\"");
                     }
                     cfg.Add($"bind x \"endmovie\"");
-                    cfg.Add($"bind c \"quit\"");
+                    cfg.Add($"bind z \"quit\"");
                     cfg.Add($"demo_resume");
                     cfg.Add($"hideConsole");
 
@@ -168,17 +189,47 @@ namespace MetaDota.DotaReplay
 
                     for (int j = 10 * i; j < Math.Min(data.data.Count, 10 * (i + 1)); j++)
                     {
-                        _input.SendText(keys[j % 10].ToString());
-                        Console.WriteLine(keys[j % 10].ToString());
-                        var wait = (int)(data.data[j].End - data.data[j].Start)/30+10;
-                        Console.WriteLine(wait);
+                        string key = keys[j % 10].ToString();
+                        _input.SendText(key);
+
+                        int start = 0;
+                        while (start == 0)
+                        {
+                            start = GetTime(GetText());
+                            Thread.Sleep(100);
+                        }
+
+                        //if (j > data.data.Count * 3 / 4) add = 20;
+                        var wait = (int)(data.data[j].End - data.data[j].Start)/30+add;
 
                         await Task.Delay(wait * 1000);
+
+                        Stopwatch stopwatch = new Stopwatch();
+
+                        // Start the stopwatch
+                        stopwatch.Start();
+
+                        while (j>2 && GetTime(GetText())< start+wait)
+                        {
+                            Thread.Sleep(100);
+                            if (stopwatch.ElapsedMilliseconds > 45 * 1000) break;
+                        }
+
+                        stopwatch.Stop();
+
+                        //Console.WriteLine($"start: {start} end: {end} wait:{wait} diff{end-start}");
                     }
 
+                    if (i == data.data.Count / 10)
+                    {
+                        Console.WriteLine("Enter any key to continue");
+                        Console.ReadKey();
+                    }
                     _input.SendText("x");
-                    await Task.Delay(5000);
                 }
+
+                //_input.SendText("z");
+
                 //check is in demo
 
 
@@ -191,10 +242,12 @@ namespace MetaDota.DotaReplay
                 //    zipProcess.Start();
                 //    zipProcess.WaitForExit();
                 //}
-                File.Delete(Path.Combine(DotaClient.dotaCfgPath, "autoexec.cfg"));
+                //File.Delete(Path.Combine(DotaClient.dotaCfgPath, "autoexec.cfg"));
             }
             generator.block = false;
         }
+
+        
 
         bool _prepareAnalystParams(MDReplayGenerator generator, out string hero_name, out string slot, out string war_fog)
         {
@@ -255,7 +308,7 @@ namespace MetaDota.DotaReplay
             {
                 Process process = new Process();
                 process.StartInfo.FileName = DotaClient.dotaLauncherPath;
-                process.StartInfo.Arguments = "-console";
+                process.StartInfo.Arguments = "-console -novid";
                 process.Start();
             }
             else
@@ -278,8 +331,156 @@ namespace MetaDota.DotaReplay
             return true;
         }
 
+        string GetText()
+        {
+            Rectangle captureArea = new Rectangle(935, 23, 50, 25); // Change these values to specify your crop area
+            Bitmap screenCapture = new Bitmap(captureArea.Width, captureArea.Height);
+            Thread.Sleep(1000);
+
+            using (Graphics g = Graphics.FromImage(screenCapture))
+            {
+                // Capture the specified area from the screen
+                g.CopyFromScreen(captureArea.Left, captureArea.Top, 0, 0, captureArea.Size, CopyPixelOperation.SourceCopy);
+            }
+
+            Size newSize = new Size(800, 400); // Example desired size
+            string imagePath = "";
+            using (Bitmap scaledImage = new Bitmap(newSize.Width, newSize.Height))
+            {
+                using (Graphics g = Graphics.FromImage(scaledImage))
+                {
+                    // Set the quality of the scaled image
+                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                    g.DrawImage(screenCapture, 0, 0, newSize.Width, newSize.Height);
+                }
+
+                // Save the scaled image to a file
+                string framePath = $"{AppDomain.CurrentDomain.BaseDirectory}frame";
+                if (!Directory.Exists(framePath)) Directory.CreateDirectory(framePath);
+                imagePath = $@"{framePath}\cropped_image{DateTime.Now.Ticks}.jpg"; // Set your file path here
+
+                scaledImage.Save(imagePath, ImageFormat.Jpeg);
+            }
 
 
+            Stopwatch stopwatch = Stopwatch.StartNew();
 
+            //string text = EasyOCR(imagePath);
+
+            string text = Tessaract(imagePath);
+            Console.WriteLine($"text = {text}");
+            stopwatch.Stop();
+            Console.WriteLine($"Time taken for detection: {stopwatch.ElapsedMilliseconds} ms");
+            File.Delete(imagePath);
+
+            return text;
+
+        }
+
+        string Tessaract(string imagePath)
+        {
+            string text = "";
+            try
+            {
+                // Define the path to the tessdata folder and the image file
+                string tessDataPath = @"C:\Code\tessdata";  // Path to tessdata folder
+
+                // Initialize the Tesseract engine with English language
+                using (var engine = new TesseractEngine(tessDataPath, "eng", EngineMode.Default))
+                {
+                    // Load the image into Pix (the format Tesseract expects)
+                    using (var img = Pix.LoadFromFile(imagePath))
+                    {
+                        // Perform OCR on the image
+                        using (var page = engine.Process(img))
+                        {
+                            // Extract the recognized text
+                            text = page.GetText();
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error: " + e.Message);
+            }
+
+            return text;
+        }
+
+        int GetTime(string text)
+        {
+            try
+            {
+                var time = new List<string>();
+                if (text.Contains('.'))
+                {
+                    time = text.Split('.').ToList();
+                }
+                else if (text.Contains(':'))
+                {
+                    time = text.Split(':').ToList();
+                }
+                else if (text.Contains(' '))
+                {
+                    time = text.Split(' ').ToList();
+                }
+
+                return Convert.ToInt32(time[0]) * 60 + Convert.ToInt32(time[1]);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("error GetTime");
+            }
+
+            return 0;
+        }
+
+        string DetectText(string framePath)
+        {
+            string apiUrl = "http://localhost:5000/ocr"; // URL of your Flask API
+
+            ///var textA = Utility.GetTextUsingTrOCR(framePath);
+            //var textA = Utility.GetTextUsingEasyOCR(framePath);
+
+            //using (var client = new HttpClient())
+            //{
+            //    using (var form = new MultipartFormDataContent())
+            //    {
+            //        byte[] imageData = File.ReadAllBytes(framePath);
+            //        var byteArrayContent = new ByteArrayContent(imageData);
+            //        form.Add(byteArrayContent, "file", Path.GetFileName(framePath));
+
+            //        var response = client.PostAsync(apiUrl, form).Result;
+            //        response.EnsureSuccessStatusCode();
+
+            //        var jsonResponse = response.Content.ReadAsStringAsync().Result;
+            //        JArray data = JArray.Parse(jsonResponse);
+            //        if (data.Count > 0)
+            //        {
+            //            string text = data.First()["text"].ToString();
+            //            return text;
+            //        }
+            //    }
+            //}
+
+            using (HttpClient client = new HttpClient())
+            {
+                var payload = new { path = framePath };
+                string jsonPayload = JsonConvert.SerializeObject(payload);
+                var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+                HttpResponseMessage response = client.PostAsync(apiUrl, content).Result;
+                string responseString = response.Content.ReadAsStringAsync().Result;
+                JArray data = JArray.Parse(responseString);
+                if (data.Count > 0)
+                {
+                    string text = data.First()["text"].ToString();
+                    return text;
+                }
+            }
+
+            return "";
+        }
     }
 }
