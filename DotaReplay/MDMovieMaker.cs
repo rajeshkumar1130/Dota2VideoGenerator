@@ -34,6 +34,7 @@ namespace MetaDota.DotaReplay
         private Dictionary<string, Interceptor.Keys> s2k;
         private int offset = 150;
         int add = 15;
+        int noOfClips = 23;
 
         public override async Task Init()
         {
@@ -68,6 +69,16 @@ namespace MetaDota.DotaReplay
                 Console.ReadLine();
                 Console.Write("MDMovieMaker Init Success");
                 s2k = new Dictionary<string, Interceptor.Keys>() {
+                {"kp_0",Interceptor.Keys.Numpad0 },
+                {"kp_1",Interceptor.Keys.Numpad1 },
+                {"kp_2",Interceptor.Keys.Numpad2 },
+                {"kp_3",Interceptor.Keys.Numpad3 },
+                {"kp_4",Interceptor.Keys.Numpad4 },
+                {"kp_5",Interceptor.Keys.Numpad5 },
+                {"kp_6",Interceptor.Keys.Numpad6 },
+                {"kp_7",Interceptor.Keys.Numpad7 },
+                {"kp_8",Interceptor.Keys.Numpad8 },
+                {"kp_9",Interceptor.Keys.Numpad9 },
                 {"b",Interceptor.Keys.B },
                 {"c",Interceptor.Keys.C },
                 {"d",Interceptor.Keys.D },
@@ -81,15 +92,8 @@ namespace MetaDota.DotaReplay
                 {"n",Interceptor.Keys.N },
                 {"p",Interceptor.Keys.P },
                 {"v",Interceptor.Keys.V },
-                {"x",Interceptor.Keys.X },
-                {"z",Interceptor.Keys.Z },
-                {"kp_3",Interceptor.Keys.Numpad3 },
-                {"kp_4",Interceptor.Keys.Numpad4 },
-                {"kp_5",Interceptor.Keys.Numpad5 },
-                {"kp_6",Interceptor.Keys.Numpad6 },
-                {"kp_7",Interceptor.Keys.Numpad7 },
-                {"kp_8",Interceptor.Keys.Numpad8 },
-                {"kp_9",Interceptor.Keys.Numpad9 },
+                //{"x",Interceptor.Keys.X },
+                //{"z",Interceptor.Keys.Z },
                 {"kp_multiply",Interceptor.Keys.NumpadAsterisk },
                 {"kp_minus",Interceptor.Keys.NumpadMinus },
                 {"kp_plus",Interceptor.Keys.NumpadPlus },
@@ -112,7 +116,7 @@ namespace MetaDota.DotaReplay
         {
             _cfgFilePath = Path.Combine(ClientParams.REPLAY_CFG_DIR, "replayCfg.txt");
             _keyFilePath = Path.Combine(ClientParams.REPLAY_CFG_DIR, "keyCfg.txt");
-            string keys = "bcdfghjklmnpvxz";
+            //string keys = "bcdfghjklmnpvxz";
             if (CancelRecording(generator))
             {
                 RECT rECT = new RECT();
@@ -147,10 +151,15 @@ namespace MetaDota.DotaReplay
                     offset = 300;
                 }
                 int prev = 0;
-                for (int i = 0; i < data.data.Count / 10 + 1; i++)
+
+                int count = (data.data.Count % noOfClips != 0 ? data.data.Count / noOfClips : data.data.Count / noOfClips - 1);
+
+                for (int i = 0; i <= count; i++)
                 {
                     List<string> cfg = new List<string>();
-                    int ticks = (int)data.data[10 * i].Start- offset;
+                    //if(i == 0) cfg.Add("hud_toggle_visibility");
+                    int ticks = (int)data.data[noOfClips * i].Start- offset;
+
                     cfg.Add($"demo_gototick {ticks}");
                     if (i == 0 && !string.IsNullOrEmpty(hero_name))
                     {
@@ -163,14 +172,14 @@ namespace MetaDota.DotaReplay
                         //cfg.Add($"dota_spectator_mode 0");
                     }
 
-                    cfg.Add($"startmovie ../../../../../movie/{generator.match_id}-{i} mp4");
+                    //cfg.Add($"startmovie ../../../../../movie/{generator.match_id}-{i} mp4");
 
-                    for (int j = 10 * i; j < Math.Min(data.data.Count, 10 * (i + 1)); j++)
+                    for (int j = noOfClips * i; j < Math.Min(data.data.Count, noOfClips * (i + 1)); j++)
                     {
                         ticks = (int)data.data[j].Start- offset;
                         ticks = Math.Max(ticks, prev);
                         prev = (int)data.data[j].End + add*30;
-                        cfg.Add($"bind {keys[j % 10]} \"demo_gototick {ticks}\"");
+                        cfg.Add($"bind {s2k.ElementAt(j % noOfClips).Key} \"demo_gototick {ticks}\"");
                     }
                     cfg.Add($"bind x \"endmovie\"");
                     cfg.Add($"bind z \"quit\"");
@@ -187,10 +196,15 @@ namespace MetaDota.DotaReplay
                     _input.SendKey(Interceptor.Keys.Enter, KeyState.Down);
                     _input.SendKey(Interceptor.Keys.Enter, KeyState.Up);
 
-                    for (int j = 10 * i; j < Math.Min(data.data.Count, 10 * (i + 1)); j++)
+
+                    if (i == 0) Twitch();
+
+                    YouTube();
+
+                    for (int j = noOfClips * i; j < Math.Min(data.data.Count, noOfClips * (i + 1)); j++)
                     {
-                        string key = keys[j % 10].ToString();
-                        _input.SendText(key);
+                        //string key = keys[j % noOfClips].ToString();
+                        _input.SendKey(s2k.ElementAt(j % noOfClips).Value);
 
                         int start = 0;
                         while (start == 0)
@@ -204,6 +218,15 @@ namespace MetaDota.DotaReplay
 
                         await Task.Delay(wait * 1000);
 
+                        if (i == 0 && j%noOfClips == 0)
+                        {
+                            _input.SendText("w");
+                        }
+                        else if (i == 1 && j % noOfClips == 0)
+                        {
+                            _input.SendText("y");
+                        }
+
                         Stopwatch stopwatch = new Stopwatch();
 
                         // Start the stopwatch
@@ -212,7 +235,7 @@ namespace MetaDota.DotaReplay
                         while (j>2 && GetTime(GetText())< start+wait)
                         {
                             Thread.Sleep(100);
-                            if (stopwatch.ElapsedMilliseconds > 45 * 1000) break;
+                            if (stopwatch.ElapsedMilliseconds > 30 * 1000) break;
                         }
 
                         stopwatch.Stop();
@@ -220,15 +243,21 @@ namespace MetaDota.DotaReplay
                         //Console.WriteLine($"start: {start} end: {end} wait:{wait} diff{end-start}");
                     }
 
-                    if (i == data.data.Count / 10)
+                    if (i == count)
                     {
-                        Console.WriteLine("Enter any key to continue");
-                        Console.ReadKey();
+                        
+                        Thread.Sleep(60 * 1000);
                     }
+
+                    YouTube();
                     _input.SendText("x");
                 }
 
-                //_input.SendText("z");
+                Twitch();
+                _input.SendText("z");
+
+                Console.WriteLine("Enter any key to continue");
+                Console.ReadKey();
 
                 //check is in demo
 
@@ -247,7 +276,23 @@ namespace MetaDota.DotaReplay
             generator.block = false;
         }
 
-        
+        void Twitch()
+        {
+            SendAlt0();
+        }
+
+        void YouTube()
+        {
+            //SendAlt0();
+        }
+
+        void SendAlt0()
+        {
+            _input.SendKey(Interceptor.Keys.RightAlt, KeyState.Down);
+            _input.SendKey(Interceptor.Keys.Zero, KeyState.Down);
+            _input.SendKey(Interceptor.Keys.Zero, KeyState.Up);
+            _input.SendKey(Interceptor.Keys.RightAlt, KeyState.Up);
+        }
 
         bool _prepareAnalystParams(MDReplayGenerator generator, out string hero_name, out string slot, out string war_fog)
         {
