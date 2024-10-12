@@ -28,7 +28,7 @@ namespace MetaDota.DotaReplay
             _task_queue = new Queue<Action>();
             while (true)
             {
-                await Task.Delay(5000);
+                await Task.Delay(2000);
                 if (_task_queue.Count > 0)
                 {
                     Action action = _task_queue.Dequeue();

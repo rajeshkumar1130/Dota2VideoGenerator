@@ -20,18 +20,20 @@ namespace MetaDota.DotaReplay
             string savePath = Path.Combine(ClientParams.DEMO_DIR, $"{generator.match_id}.dem");
 
             CMsgDOTAMatch match = generator.match;
-            Console.WriteLine("replay available: " + match.replay_state);
-            if (match == null)
+            //Console.WriteLine("replay available: " + match.replay_state);
+            //if (match == null)
+            //{
+            //    generator.eReplayGenerateResult = MDReplayGenerator.EReplayGenerateResult.NoMatch;
+            //}
+            //else if (false)
+            //{
+            //    generator.eReplayGenerateResult = MDReplayGenerator.EReplayGenerateResult.DemoUnavailable;
+            //}
+            //else 
+            if (!File.Exists(momentsPath))
             {
-                generator.eReplayGenerateResult = MDReplayGenerator.EReplayGenerateResult.NoMatch;
-            }
-            else if (false)
-            {
-                generator.eReplayGenerateResult = MDReplayGenerator.EReplayGenerateResult.DemoUnavailable;
-            }
-            else if (!File.Exists(momentsPath))
-            {
-                if (!File.Exists(savePath))
+                //if (!File.Exists(savePath))
+                if (false)
                 {
                     var cluster = match.cluster;
                     var match_id = match.match_id;
@@ -79,13 +81,14 @@ namespace MetaDota.DotaReplay
                 }
 
                 string heroName = "";
-                if (match.players.Any(x => x.account_id == generator.account_id))
-                {
-                    heroName = DotaClient.Instance.GetHeroNameByID(match.players.FirstOrDefault(x => x.account_id == generator.account_id).hero_id);
-                }
+                //if (match.players.Any(x => x.account_id == generator.account_id))
+                //{
+                //    heroName = DotaClient.Instance.GetHeroNameByID(match.players.FirstOrDefault(x => x.account_id == generator.account_id).hero_id);
+                //}
 
                 using HttpClient client = new HttpClient();
-                string url = $"http://localhost:8000/getHighlights1/{match.match_id}";
+                //string url = $"http://localhost:8000/getHighlights1/{match.match_id}";
+                string url = $"http://localhost:8000/getHighlights1/{generator.match_id}";
 
                 if (!string.IsNullOrEmpty(heroName))
                 {

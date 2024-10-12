@@ -143,8 +143,8 @@ namespace MetaDota.DotaReplay
                 string momentsPath = Path.Combine(ClientParams.DEMO_DIR, $"{generator.match_id}.json");
                 string json = File.ReadAllText(momentsPath);
                 var data = JsonConvert.DeserializeObject<Data>(json) ?? new Data();
-                string hero_name, slot, war_fog;
-                _prepareAnalystParams(generator, out hero_name, out slot, out war_fog);
+                string hero_name = "fdf", slot = "1", war_fog = "";
+               // _prepareAnalystParams(generator, out hero_name, out slot, out war_fog);
                 Console.WriteLine($"Hero Name: {hero_name}");
                 if(!string.IsNullOrEmpty(hero_name) )
                 {
@@ -164,7 +164,7 @@ namespace MetaDota.DotaReplay
                     if (i == 0 && !string.IsNullOrEmpty(hero_name))
                     {
                         cfg.Add($"dota_spectator_hero_index {slot}");
-                        cfg.Add($"dota_spectator_fog_of_war {war_fog}");
+                        //cfg.Add($"dota_spectator_fog_of_war {war_fog}");
                         cfg.Add($"dota_spectator_mode 3");
                     }
                     else if (i == 0)

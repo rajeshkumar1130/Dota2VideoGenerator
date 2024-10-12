@@ -18,27 +18,27 @@ namespace MetaDota.DotaReplay
         {
             CMsgDOTAMatch match = generator.match;
 
-            if (match == null)
-            {
-                generator.eReplayGenerateResult = MDReplayGenerator.EReplayGenerateResult.NoMatch;
-            }
-            else if (!File.Exists(generator.demoFilePath))
-            {
-                generator.eReplayGenerateResult = MDReplayGenerator.EReplayGenerateResult.DemoDownloadFail;
-            }
-            else
-            {
-                string hero_name, slot, war_fog;
-                if (!_prepareAnalystParams(generator, out hero_name, out slot, out war_fog))
-                {
-                    generator.eReplayGenerateResult = MDReplayGenerator.EReplayGenerateResult.NotFindPlayer;
-                }
-                else if (!_analyst_demo(generator.demoFilePath, hero_name, slot, war_fog, generator))
-                {
-                    generator.eReplayGenerateResult = MDReplayGenerator.EReplayGenerateResult.AnalystFail;
-                }
+            //if (match == null)
+            //{
+            //    generator.eReplayGenerateResult = MDReplayGenerator.EReplayGenerateResult.NoMatch;
+            //}
+            //else if (!File.Exists(generator.demoFilePath))
+            //{
+            //    generator.eReplayGenerateResult = MDReplayGenerator.EReplayGenerateResult.DemoDownloadFail;
+            //}
+            //else
+            //{
+            //    string hero_name, slot, war_fog;
+            //    if (!_prepareAnalystParams(generator, out hero_name, out slot, out war_fog))
+            //    {
+            //        generator.eReplayGenerateResult = MDReplayGenerator.EReplayGenerateResult.NotFindPlayer;
+            //    }
+            //    else if (!_analyst_demo(generator.demoFilePath, hero_name, slot, war_fog, generator))
+            //    {
+            //        generator.eReplayGenerateResult = MDReplayGenerator.EReplayGenerateResult.AnalystFail;
+            //    }
 
-            }
+            //}
 
             generator.block = false;
         }

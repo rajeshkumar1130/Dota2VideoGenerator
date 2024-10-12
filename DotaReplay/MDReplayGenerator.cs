@@ -74,7 +74,7 @@ namespace MetaDota.DotaReplay
             {
                 Console.WriteLine("Unable to Connect DotaServer");
                 OccurError = true;
-                return false;
+                //return false;
                 //_client.Reconnect();
                 //await _Download(match_id);
             }
@@ -83,7 +83,7 @@ namespace MetaDota.DotaReplay
             {
                 Console.WriteLine("Task is processing");
                 OccurError = true;
-                return false;
+                //return false;
             }
 
             //paris request content
