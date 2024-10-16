@@ -177,7 +177,7 @@ namespace MetaDota.DotaReplay
                     for (int j = noOfClips * i; j < Math.Min(data.data.Count, noOfClips * (i + 1)); j++)
                     {
                         ticks = (int)data.data[j].Start- offset;
-                        ticks = Math.Max(ticks, prev);
+                        ticks = Math.Max(ticks, prev+3*30);
                         prev = (int)data.data[j].End + add*30;
                         cfg.Add($"bind {s2k.ElementAt(j % noOfClips).Key} \"demo_gototick {ticks}\"");
                     }
