@@ -39,6 +39,7 @@ namespace MetaDota.DotaReplay
         private string _request = "";
         public ulong match_id = 0;
         public uint account_id = 0;
+        public string heroName = "";
         public CMsgDOTAMatch match;
         public string demoFilePath = "";
         public string replayFilePath = "";
@@ -91,7 +92,8 @@ namespace MetaDota.DotaReplay
             try
             {
                 match_id = ulong.Parse(splitArray[0]);
-                account_id = uint.Parse(splitArray[1]);
+                //account_id = uint.Parse(splitArray[1]);
+                heroName = splitArray[1];
             }
             catch (Exception e)
             {

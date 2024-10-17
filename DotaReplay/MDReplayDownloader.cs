@@ -80,7 +80,6 @@ namespace MetaDota.DotaReplay
                     }
                 }
 
-                string heroName = "";
                 //if (match.players.Any(x => x.account_id == generator.account_id))
                 //{
                 //    heroName = DotaClient.Instance.GetHeroNameByID(match.players.FirstOrDefault(x => x.account_id == generator.account_id).hero_id);
@@ -90,9 +89,9 @@ namespace MetaDota.DotaReplay
                 //string url = $"http://localhost:8000/getHighlights1/{match.match_id}";
                 string url = $"http://localhost:8000/getHighlights1/{generator.match_id}";
 
-                if (!string.IsNullOrEmpty(heroName))
+                if (generator.heroName != "123")
                 {
-                    //url = $"http://localhost:8000/getSinglePlayerHighlights?match_id={match.match_id}&hero_name={heroName}";
+                    url = $"http://localhost:8000/getSinglePlayerHighlights?match_id={generator.match_id}&hero_name={generator.heroName}";
                 }
 
                 try
