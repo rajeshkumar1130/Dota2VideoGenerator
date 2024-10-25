@@ -40,6 +40,7 @@ namespace MetaDota.DotaReplay
         public ulong match_id = 0;
         public uint account_id = 0;
         public string heroName = "";
+        public string slot = "";
         public CMsgDOTAMatch match;
         public string demoFilePath = "";
         public string replayFilePath = "";

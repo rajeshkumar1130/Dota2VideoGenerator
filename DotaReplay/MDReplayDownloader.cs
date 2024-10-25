@@ -8,11 +8,33 @@ using System.Text;
 using System.Threading.Tasks;
 using SteamKit2.GC.Dota.Internal;
 using static SteamKit2.Internal.CMsgDownloadRateStatistics;
+using SteamKit2.CDN;
+using System.Reflection.Emit;
 
 namespace MetaDota.DotaReplay
 {
     class MDReplayDownloader : MDFactory<MDReplayDownloader>
     {
+        public void GetPlayerSlot(MDReplayGenerator generator)
+        {
+            using HttpClient client = new HttpClient();
+            string slot = "";
+            string url = $"http://localhost:8000/getPlayerSlot?match_id={generator.match_id}&hero_name={generator.heroName}";
+
+            try
+            {
+                client.Timeout = TimeSpan.FromMinutes(30);
+                HttpResponseMessage response = client.GetAsync(url).Result;
+                response.EnsureSuccessStatusCode(); // Throws an exception for HTTP error responses
+                string responseBody = response.Content.ReadAsStringAsync().Result;
+                slot = responseBody;
+            }
+            catch (HttpRequestException e)
+            {
+                Console.WriteLine($"Request error: {e.Message}");
+            }
+
+        }
 
         public override async Task Work(MDReplayGenerator generator)
         {
@@ -85,35 +107,13 @@ namespace MetaDota.DotaReplay
                 //    heroName = DotaClient.Instance.GetHeroNameByID(match.players.FirstOrDefault(x => x.account_id == generator.account_id).hero_id);
                 //}
 
-                using HttpClient client = new HttpClient();
-                //string url = $"http://localhost:8000/getHighlights1/{match.match_id}";
-                string url = $"http://localhost:8000/getHighlights1/{generator.match_id}";
-
-                if (generator.heroName != "123")
-                {
-                    url = $"http://localhost:8000/getSinglePlayerHighlights?match_id={generator.match_id}&hero_name={generator.heroName}";
-                }
-
-                try
-                {
-                    client.Timeout = TimeSpan.FromMinutes(30);
-                    HttpResponseMessage response = client.GetAsync(url).Result;
-                    response.EnsureSuccessStatusCode(); // Throws an exception for HTTP error responses
-                    string responseBody = response.Content.ReadAsStringAsync().Result;
-
-                    File.WriteAllText(momentsPath, responseBody);
-                }
-                catch (HttpRequestException e)
-                {
-                    Console.WriteLine($"Request error: {e.Message}");
-                }
+                Download(generator.match_id, generator.heroName);
 
                 if (!File.Exists(momentsPath))
                 {
                     generator.eReplayGenerateResult = MDReplayGenerator.EReplayGenerateResult.DemoDownloadFail;
                 }
             }
-            
 
             //string savePath = Path.Combine(ClientParams.DEMO_DIR, $"{generator.match_id}.dem");
             //CMsgDOTAMatch match = generator.match;
@@ -176,6 +176,34 @@ namespace MetaDota.DotaReplay
 
 
             generator.block = false;
+        }
+
+        public void Download(ulong matchId, string hero_name)
+        {
+            string momentsPath = Path.Combine(ClientParams.DEMO_DIR, $"{matchId}.json");
+
+            using HttpClient client = new HttpClient();
+            //string url = $"http://localhost:8000/getHighlights1/{match.match_id}";
+            string url = $"http://localhost:8000/getHighlights1?match_id={matchId}&hero_name={hero_name}";
+
+            if (hero_name != "123" && hero_name != "1234")
+            {
+                //url = $"http://localhost:8000/getSinglePlayerHighlights?match_id={matchId}&hero_name={hero_name}";
+            }
+
+            try
+            {
+                client.Timeout = TimeSpan.FromMinutes(30);
+                HttpResponseMessage response = client.GetAsync(url).Result;
+                response.EnsureSuccessStatusCode(); // Throws an exception for HTTP error responses
+                string responseBody = response.Content.ReadAsStringAsync().Result;
+
+                File.WriteAllText(momentsPath, responseBody);
+            }
+            catch (HttpRequestException e)
+            {
+                Console.WriteLine($"Request error: {e.Message}");
+            }
         }
     }
 }

@@ -10,5 +10,6 @@ namespace MetaDota.DotaReplay
     {
         public List<Event> data { get; set; } = new List<Event>();
         public bool Success { get; set; }
+        public int slot { get; set; }
     }
 }

@@ -15,6 +15,9 @@ using MetaDota.Common.Native;
 using System.Drawing;
 using MetaDota.config;
 using static SteamKit2.GC.Dota.Internal.CDOTAMatchMetadata;
+using SteamKit2.CDN;
+using System.Reflection.Emit;
+using static SteamKit2.GC.Dota.Internal.CMsgSDOAssert;
 
 
 namespace ConsoleApp2
@@ -101,6 +104,7 @@ namespace ConsoleApp2
         {
             requestQueue = new Queue<string>();
             string[] requestArry = File.ReadAllLines(ClientParams.MATCH_REQUEST_FILE);
+            Task.Run(() => Download(requestArry));
             for (int i = 0; i < requestArry.Length; i++)
             {
                 requestQueue.Enqueue(requestArry[i]);
@@ -122,6 +126,45 @@ namespace ConsoleApp2
 
                 }
             }
+        }
+        static void Download(string[] requestArry)
+        {
+            //Thread.Sleep(60000);
+            try
+            {
+                for (int i = 1; i < requestArry.Length; i++)
+                {
+                    string[] splitArray = requestArry[i].Split('_');
+
+                    MDReplayDownloader mDReplayDownloader = new MDReplayDownloader();
+                   
+                    mDReplayDownloader.Download(ulong.Parse(splitArray[0]), splitArray[1]);
+
+                    //account_id = uint.Parse(splitArray[1]);
+                    //mDReplayGenerator.heroName = splitArray[1];
+                    //using HttpClient client = new HttpClient();
+
+                    //string url = $"http://localhost:8000/getHighlights1?match_id={match_id}&hero_name={heroName}";
+
+                    //try
+                    //{
+                    //    client.Timeout = TimeSpan.FromMinutes(30);
+                    //    HttpResponseMessage response = client.GetAsync(url).Result;
+                    //    response.EnsureSuccessStatusCode(); // Throws an exception for HTTP error responses
+                    //}
+                    //catch (HttpRequestException e)
+                    //{
+                    //    Console.WriteLine($"Request error: {e.Message}");
+                    //    i--;
+                    //}
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Request error: {ex.Message}");
+
+            }
+
         }
 
     }

@@ -12,7 +12,7 @@ namespace MetaDota.DotaReplay
         public const int APPID = 570;
         public const string STEAM_USERNAME = "13990092481";
         public const string STEAM_PASSWORD = "8111528yui";
-        public const int DOWNLOAD_CHECK_INTERVAL = 10000;
+        public const int DOWNLOAD_CHECK_INTERVAL = 2000;
         public const string MATCH_REQUEST_FILE = "matchRequest.txt";
         public const string REPLAY_DIR = "replays";
         public const string DEMO_DIR = "C:\\Code\\woodota_rkn\\replays";
