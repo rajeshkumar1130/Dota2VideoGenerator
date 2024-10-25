@@ -32,7 +32,7 @@ namespace MetaDota.DotaReplay
         private string _keyFilePath = "";
 
         private Dictionary<string, Interceptor.Keys> s2k;
-        private int offset = 180;
+        private int offset = 0;
         int add = 10;
         int noOfClips = 31;
         //int noOfClips = 10;
@@ -173,7 +173,8 @@ namespace MetaDota.DotaReplay
                     int ticks = (int)data.data[noOfClips * i].Start- offset;
 
                     cfg.Add($"demo_gototick {ticks}");
-                    if (i == 0 && (generator.heroName != "123" || generator.heroName == "1234"))
+                    //if (i == 0 && (generator.heroName != "123" || generator.heroName == "1234"))
+                    if (i == 0)
                     {
                         if(generator.heroName != "1234")
                         {
@@ -182,7 +183,7 @@ namespace MetaDota.DotaReplay
                         cfg.Add($"dota_spectator_hero_index {slot}");
                         //cfg.Add($"dota_spectator_fog_of_war {war_fog}");
                         //cfg.Add($"dota_spectator_mode 0");
-                        cfg.Add($"dota_spectator_mode 3");
+                        cfg.Add($"dota_spectator_mode 2");
                     }
                     else if(generator.heroName == "123")
                     {
@@ -223,6 +224,8 @@ namespace MetaDota.DotaReplay
                     {
                         //string key = keys[j % noOfClips].ToString();
                         _input.SendKey(s2k.ElementAt(j % noOfClips).Value);
+                        _input.SendText(data.data[j].Slot.ToString());
+
                         Thread.Sleep(900);
                         //Console.WriteLine("start");
                         SendAlt7();

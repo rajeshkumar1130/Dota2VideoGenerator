@@ -184,7 +184,7 @@ namespace MetaDota.DotaReplay
 
             using HttpClient client = new HttpClient();
             //string url = $"http://localhost:8000/getHighlights1/{match.match_id}";
-            string url = $"http://localhost:8000/getHighlights1?match_id={matchId}&hero_name={hero_name}";
+            string url = $"http://localhost:8000/getHighlights2?match_id={matchId}&hero_name={hero_name}";
 
             if (hero_name != "123" && hero_name != "1234")
             {
