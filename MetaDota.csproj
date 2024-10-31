@@ -13,6 +13,9 @@
   <ItemGroup>
     <PackageReference Include="Aliyun.OSS.SDK.NetCore" Version="2.13.0" />
     <PackageReference Include="Dota2" Version="0.11.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
     <PackageReference Include="SteamKit2" Version="2.5.0" />
     <PackageReference Include="System.Drawing.Common" Version="8.0.8" />
     <PackageReference Include="Tesseract" Version="5.2.0" />
@@ -39,6 +42,9 @@
     </None>
     <None Update="7z.exe">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="config\keyInputDelay.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

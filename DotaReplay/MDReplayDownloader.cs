@@ -10,6 +10,7 @@ using SteamKit2.GC.Dota.Internal;
 using static SteamKit2.Internal.CMsgDownloadRateStatistics;
 using SteamKit2.CDN;
 using System.Reflection.Emit;
+using ConsoleApp2;
 
 namespace MetaDota.DotaReplay
 {
@@ -182,13 +183,15 @@ namespace MetaDota.DotaReplay
         {
             string momentsPath = Path.Combine(ClientParams.DEMO_DIR, $"{matchId}.json");
 
+            var level = Program.configuration["AppSEttings:Level"];
+
             using HttpClient client = new HttpClient();
             //string url = $"http://localhost:8000/getHighlights1/{match.match_id}";
             string url = $"http://localhost:8000/getHighlights1?match_id={matchId}&hero_name={hero_name}";
 
-            if (hero_name != "123" && hero_name != "1234")
+            if (level == "1")
             {
-                //url = $"http://localhost:8000/getSinglePlayerHighlights?match_id={matchId}&hero_name={hero_name}";
+                url = $"http://localhost:8000/getSinglePlayerHighlights?match_id={matchId}&hero_name={hero_name}";
             }
 
             try

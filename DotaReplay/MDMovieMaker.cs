@@ -35,6 +35,7 @@ namespace MetaDota.DotaReplay
         private int offset = 180;
         int add = 10;
         int noOfClips = 31;
+        public bool started = false;
         //int noOfClips = 10;
 
         public override async Task Init()
@@ -162,6 +163,12 @@ namespace MetaDota.DotaReplay
                 {
                     //offset = 300;
                 }
+                var level = Program.configuration["AppSEttings:Level"];
+                if(level == "1")
+                {
+                    add = 12;
+                }
+
                 int prev = 0;
 
                 int count = (data.data.Count % noOfClips != 0 ? data.data.Count / noOfClips : data.data.Count / noOfClips - 1);
@@ -271,7 +278,7 @@ namespace MetaDota.DotaReplay
                         SendAlt7();
                         Console.WriteLine("Enter any key to continue");
                         Console.ReadLine();
-                        //Thread.Sleep(30 * 1000);
+                        //Thread.Sleep(15 * 1000);
                         SendAlt7();
                     }
 
@@ -284,8 +291,8 @@ namespace MetaDota.DotaReplay
                 //_input.SendText("z");
 
 
-                //Console.WriteLine("Enter any key to continue");
-                //Console.ReadKey();
+                Console.WriteLine("Enter any key to continue");
+                Console.ReadLine();
 
                 //check is in demo
 
@@ -309,9 +316,13 @@ namespace MetaDota.DotaReplay
             //SendAlt0();
         }
 
-        void YouTube()
+        public void YouTube()
         {
-            //SendAlt0();
+            if(!started)
+            {
+                //SendAlt0();
+                started = true;
+            }
         }
         void YouTube1()
         {

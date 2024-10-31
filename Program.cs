@@ -18,7 +18,8 @@ using static SteamKit2.GC.Dota.Internal.CDOTAMatchMetadata;
 using SteamKit2.CDN;
 using System.Reflection.Emit;
 using static SteamKit2.GC.Dota.Internal.CMsgSDOAssert;
-
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.Json;
 
 namespace ConsoleApp2
 {
@@ -27,6 +28,7 @@ namespace ConsoleApp2
         public static Queue<string> requestQueue = new Queue<string>();
         public static MDConfig config;
         public static bool JobStart = false;
+        public static IConfiguration configuration;
 
         static void test()
         {
@@ -34,6 +36,8 @@ namespace ConsoleApp2
         }
         public async static Task Main(string[] args)
         {
+            var builder = new ConfigurationBuilder().AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+            configuration = builder.Build();
 
             JobStart = false;
 
@@ -111,22 +115,37 @@ namespace ConsoleApp2
             }
             JobStart = true;
             string requestStr;
+            int count = requestQueue.Count;
             while (true)
             {
+
                 await Task.Delay(ClientParams.DOWNLOAD_CHECK_INTERVAL);
                 if (requestQueue.Count > 0)
                 {
                     File.WriteAllLines(ClientParams.MATCH_REQUEST_FILE, requestQueue.ToArray());
+                    //if (count == requestQueue.Count) SendAlt0();
                     requestStr = requestQueue.Dequeue();
                     if (!string.IsNullOrEmpty(requestStr))
                     {
                         MDReplayGenerator.Generate(requestStr);
                         Console.WriteLine($"result : {MDReplayGenerator.GetResult(requestStr)}");
                     }
-
+                    if (requestQueue.Count == 0) SendAlt0();
                 }
             }
         }
+
+        static void SendAlt0()
+        {
+            MDMovieMaker.Instance.started = false;
+            MDMovieMaker.Instance.YouTube();
+            //MDMovieMaker.Instance._input.SendKey(Interceptor.Keys.F4);
+            //_input.SendKey(Interceptor.Keys.RightAlt, KeyState.Down);
+            //_input.SendKey(Interceptor.Keys.Zero, KeyState.Down);
+            //_input.SendKey(Interceptor.Keys.Zero, KeyState.Up);
+            //_input.SendKey(Interceptor.Keys.RightAlt, KeyState.Up);
+        }
+
         static void Download(string[] requestArry)
         {
             //Thread.Sleep(60000);
