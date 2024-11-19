@@ -21,6 +21,7 @@ using System.Drawing.Imaging;
 using Newtonsoft.Json.Linq;
 using Tesseract;
 using ImageFormat = System.Drawing.Imaging.ImageFormat;
+using System.Xml.Linq;
 
 namespace MetaDota.DotaReplay
 {
@@ -32,8 +33,8 @@ namespace MetaDota.DotaReplay
         private string _keyFilePath = "";
 
         private Dictionary<string, Interceptor.Keys> s2k;
-        private int offset = 5*30;
-        int add = 4;
+        private int offset = 2*30;
+        int add = 0;
         int noOfClips = 31;
         //int noOfClips = 10;
 
@@ -162,7 +163,6 @@ namespace MetaDota.DotaReplay
                 {
                     //offset = 300;
                 }
-                int prev = 0;
 
                 int count = (data.data.Count % noOfClips != 0 ? data.data.Count / noOfClips : data.data.Count / noOfClips - 1);
 
@@ -178,7 +178,7 @@ namespace MetaDota.DotaReplay
                     {
                         if(generator.heroName != "1234")
                         {
-                            slot = (data.slot+1).ToString();
+                            slot = ((int)Convert.ToDouble(data.data[noOfClips * i].Slot) + 1).ToString();
                         }
                         cfg.Add($"dota_spectator_hero_index {slot}");
                         //cfg.Add($"dota_spectator_fog_of_war {war_fog}");
@@ -193,10 +193,9 @@ namespace MetaDota.DotaReplay
                     //cfg.Add($"startmovie ../../../../../movie/{generator.match_id}-{i} mp4");
                     for (int j = noOfClips * i; j < Math.Min(data.data.Count, noOfClips * (i + 1)); j++)
                     {
-                        ticks = (int)data.data[j].Start- offset;
-                        if (prev > ticks) data.data[j].Sub = prev - ticks;
-                        ticks = Math.Max(ticks, prev);
-                        prev = (int)data.data[j].End + add*30;
+                        data.data[j].Start -= offset;
+                        data.data[j].End += add * 30;
+                        ticks = (int)data.data[j].Start;
                         cfg.Add($"bind {s2k.ElementAt(j % noOfClips).Key} \"demo_gototick {ticks}\"");
                     }
                     cfg.Add($"bind x \"endmovie\"");
@@ -224,9 +223,19 @@ namespace MetaDota.DotaReplay
                     {
                         //string key = keys[j % noOfClips].ToString();
                         _input.SendKey(s2k.ElementAt(j % noOfClips).Value);
-                        _input.SendText(((int)Convert.ToDouble(data.data[j].Slot)+1).ToString());
+                        //if (j==0 || data.data[j].Start> data.data[j-1].End)
+                        //{
+                        //    _input.SendKey(s2k.ElementAt(j % noOfClips).Value);
+                        //}
+                        //else
+                        //{
+                        //    data.data[j-1].End = data.data[j - 1].Start;
+                        //}
+                        Console.WriteLine(((int)Convert.ToDouble(data.data[j].Slot) + 1).ToString());
+                        _input.SendText(((int)Convert.ToDouble(data.data[j].Slot) + 1).ToString());
 
-                        Thread.Sleep(900);
+                        Thread.Sleep(1000);
+                      
                         //Console.WriteLine("start");
                         SendAlt7();
                         //int start = 0;
@@ -237,8 +246,8 @@ namespace MetaDota.DotaReplay
                         //}
 
                         //if (j > data.data.Count * 3 / 4) add = 20;
-                        Console.WriteLine(data.data[j].Sub);
-                        var wait = (int)(data.data[j].End - data.data[j].Start - data.data[j].Sub) /30+add;
+                        var wait = (int)(data.data[j].End - data.data[j].Start) /30;
+                        Console.WriteLine($"{wait}" );
 
                         if(wait>0)
                         await Task.Delay(wait * 1000);
