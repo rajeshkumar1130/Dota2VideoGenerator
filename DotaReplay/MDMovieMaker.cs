@@ -230,7 +230,7 @@ namespace MetaDota.DotaReplay
                     {
                         //string key = keys[j % noOfClips].ToString();
                         _input.SendKey(s2k.ElementAt(j % noOfClips).Value);
-                        Thread.Sleep(900);
+                        Thread.Sleep(1000);
                         //Console.WriteLine("start");
                         SendAlt7();
                         //int start = 0;
@@ -318,9 +318,11 @@ namespace MetaDota.DotaReplay
 
         public void YouTube()
         {
-            if(!started)
+            var stream = Program.configuration["AppSettings:Stream"];
+
+            if (!started && stream == "1")
             {
-                //SendAlt0();
+                SendAlt0();
                 started = true;
             }
         }
