@@ -33,7 +33,7 @@ namespace MetaDota.DotaReplay
         private string _keyFilePath = "";
 
         private Dictionary<string, Interceptor.Keys> s2k;
-        private int offset = 2*30;
+        private int offset = 5*30;
         int add = 0;
         int noOfClips = 31;
         //int noOfClips = 10;
@@ -154,6 +154,17 @@ namespace MetaDota.DotaReplay
 
                 string momentsPath = Path.Combine(ClientParams.DEMO_DIR, $"{generator.match_id}.json");
                 string json = File.ReadAllText(momentsPath);
+
+                var settings = new JsonSerializerSettings
+                {
+                    Error = (sender, args) =>
+                    {
+                        // Handle error here
+                        Console.WriteLine($"Error: {args.ErrorContext.Error.Message}");
+                        args.ErrorContext.Handled = true; // Bypass error
+                    }
+                };
+
                 var data = JsonConvert.DeserializeObject<Data>(json) ?? new Data();
                 string  slot = "1", war_fog = "";
                 Random rnd = new Random();
@@ -178,7 +189,14 @@ namespace MetaDota.DotaReplay
                     {
                         if(generator.heroName != "1234")
                         {
-                            slot = ((int)Convert.ToDouble(data.data[noOfClips * i].Slot) + 1).ToString();
+                            if(data.data[noOfClips * i].Attackers is double)
+                            {
+                                slot = ((int)Convert.ToDouble(data.data[noOfClips * i].Slot) + 1).ToString();
+                            }
+                            else
+                            {
+                                slot = ((JArray)data.data[noOfClips * i].Attackers).First().ToString();
+                            }
                         }
                         cfg.Add($"dota_spectator_hero_index {slot}");
                         //cfg.Add($"dota_spectator_fog_of_war {war_fog}");
@@ -194,6 +212,7 @@ namespace MetaDota.DotaReplay
                     for (int j = noOfClips * i; j < Math.Min(data.data.Count, noOfClips * (i + 1)); j++)
                     {
                         data.data[j].Start -= offset;
+                        if (j > 0) data.data[j].Start = Math.Max(data.data[j].Start, data.data[j - 1].End);
                         data.data[j].End += add * 30;
                         ticks = (int)data.data[j].Start;
                         cfg.Add($"bind {s2k.ElementAt(j % noOfClips).Key} \"demo_gototick {ticks}\"");
@@ -216,13 +235,18 @@ namespace MetaDota.DotaReplay
 
                     if (i == 0) Twitch();
 
+
                     YouTube();
 
 
                     for (int j = noOfClips * i; j < Math.Min(data.data.Count, noOfClips * (i + 1)); j++)
                     {
                         //string key = keys[j % noOfClips].ToString();
-                        _input.SendKey(s2k.ElementAt(j % noOfClips).Value);
+                        if (j == 0 || data.data[j].Start > data.data[j - 1].End)
+                        {
+                            Console.WriteLine(s2k.ElementAt(j % noOfClips).Value);
+                            _input.SendKey(s2k.ElementAt(j % noOfClips).Value);
+                        }
                         //if (j==0 || data.data[j].Start> data.data[j-1].End)
                         //{
                         //    _input.SendKey(s2k.ElementAt(j % noOfClips).Value);
@@ -231,8 +255,15 @@ namespace MetaDota.DotaReplay
                         //{
                         //    data.data[j-1].End = data.data[j - 1].Start;
                         //}
-                        Console.WriteLine(((int)Convert.ToDouble(data.data[j].Slot) + 1).ToString());
-                        _input.SendText(((int)Convert.ToDouble(data.data[j].Slot) + 1).ToString());
+                        if (data.data[j].Attackers is double)
+                        {
+                            slot = ((int)Convert.ToDouble(data.data[j].Slot) + 1).ToString();
+                        }
+                        else
+                        {
+                            slot = ((int)Convert.ToDouble(((JArray)data.data[j].Attackers).First()) + 1).ToString();
+                        }
+                        _input.SendText(slot);
 
                         Thread.Sleep(1000);
                       
@@ -274,6 +305,7 @@ namespace MetaDota.DotaReplay
 
                         //stopwatch.Stop();
                         //Console.WriteLine("End");
+                        Thread.Sleep(1000);
                         SendAlt7();
                         //Console.WriteLine($"start: {start} end: {end} wait:{wait} diff{end-start}");
                     }
@@ -325,7 +357,8 @@ namespace MetaDota.DotaReplay
 
         void YouTube()
         {
-            //SendAlt0();
+            Thread.Sleep(1000);
+            SendAlt0();
         }
         void YouTube1()
         {
@@ -337,7 +370,8 @@ namespace MetaDota.DotaReplay
         /// </summary>
         void SendAlt0()
         {
-            _input.SendKey(Interceptor.Keys.F4);
+            _input.SendKey(Interceptor.Keys.F1);
+            //_input.SendKey(Interceptor.Keys.F4);
             //_input.SendKey(Interceptor.Keys.RightAlt, KeyState.Down);
             //_input.SendKey(Interceptor.Keys.Zero, KeyState.Down);
             //_input.SendKey(Interceptor.Keys.Zero, KeyState.Up);
@@ -349,7 +383,7 @@ namespace MetaDota.DotaReplay
         /// </summary>
         void SendAlt7()
         {
-            _input.SendKey(Interceptor.Keys.F1);
+            //_input.SendKey(Interceptor.Keys.F1);
             //_input.SendKey(Interceptor.Keys.RightAlt, KeyState.Down);
             //_input.SendKey(Interceptor.Keys.Seven, KeyState.Down);
             //_input.SendKey(Interceptor.Keys.Seven, KeyState.Up);
