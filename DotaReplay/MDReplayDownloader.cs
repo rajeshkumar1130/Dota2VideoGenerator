@@ -194,6 +194,13 @@ namespace MetaDota.DotaReplay
                 url = $"http://localhost:8000/getSinglePlayerHighlights?match_id={matchId}&hero_name={hero_name}";
             }
 
+            var mode = Program.configuration["AppSettings:Mode"];
+            if(mode == "2")
+            {
+                url = $"http://localhost:8000/getHighlights2?match_id={matchId}&hero_name={hero_name}";
+            }
+
+
             try
             {
                 client.Timeout = TimeSpan.FromMinutes(30);

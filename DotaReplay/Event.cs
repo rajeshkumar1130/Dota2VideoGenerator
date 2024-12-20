@@ -11,6 +11,10 @@ namespace MetaDota.DotaReplay
         public float Start { get; set; }
         public float End { get; set; }
         public string clock_start { get; set; }
+        public string Slot { get; set; }
+
+        public object Attackers { get; set; }
+
 
     }
 }

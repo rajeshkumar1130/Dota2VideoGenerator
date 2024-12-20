@@ -21,6 +21,7 @@ using System.Drawing.Imaging;
 using Newtonsoft.Json.Linq;
 using Tesseract;
 using ImageFormat = System.Drawing.Imaging.ImageFormat;
+using System.Reflection.Emit;
 
 namespace MetaDota.DotaReplay
 {
@@ -126,6 +127,21 @@ namespace MetaDota.DotaReplay
         {
             _cfgFilePath = Path.Combine(ClientParams.REPLAY_CFG_DIR, "replayCfg.txt");
             _keyFilePath = Path.Combine(ClientParams.REPLAY_CFG_DIR, "keyCfg.txt");
+
+            var mode = Program.configuration["AppSettings:Mode"];
+            if(mode == "2")
+            {
+                await PlayerChase(generator);
+            }
+            else
+            {
+                await PlayerPerspectiveDirectedCamera(generator);
+            }
+        }
+
+        private async Task PlayerPerspectiveDirectedCamera(MDReplayGenerator generator)
+        {
+           
             //string keys = "bcdfghjklmnpvxz";
             if (CancelRecording(generator))
             {
@@ -155,7 +171,7 @@ namespace MetaDota.DotaReplay
                 string momentsPath = Path.Combine(ClientParams.DEMO_DIR, $"{generator.match_id}.json");
                 string json = File.ReadAllText(momentsPath);
                 var data = JsonConvert.DeserializeObject<Data>(json) ?? new Data();
-                string  slot = "1", war_fog = "";
+                string slot = "1", war_fog = "";
                 Random rnd = new Random();
                 slot = rnd.Next(0, 1).ToString();
                 // _prepareAnalystParams(generator, out hero_name, out slot, out war_fog);
@@ -164,7 +180,7 @@ namespace MetaDota.DotaReplay
                     //offset = 300;
                 }
                 var level = Program.configuration["AppSEttings:Level"];
-                if(level == "1")
+                if (level == "1")
                 {
                     add = 12;
                 }
@@ -177,12 +193,12 @@ namespace MetaDota.DotaReplay
                 {
                     List<string> cfg = new List<string>();
                     //if(i == 0) cfg.Add("hud_toggle_visibility");
-                    int ticks = (int)data.data[noOfClips * i].Start- offset;
+                    int ticks = (int)data.data[noOfClips * i].Start - offset;
 
                     cfg.Add($"demo_gototick {ticks}");
                     if (i == 0 && (generator.heroName != "123" || generator.heroName == "1234"))
                     {
-                        if(generator.heroName != "1234")
+                        if (generator.heroName != "1234")
                         {
                             slot = data.slot.ToString();
                         }
@@ -191,7 +207,7 @@ namespace MetaDota.DotaReplay
                         //cfg.Add($"dota_spectator_mode 0");
                         cfg.Add($"dota_spectator_mode 3");
                     }
-                    else if(generator.heroName == "123")
+                    else if (generator.heroName == "123")
                     {
                         //cfg.Add($"dota_spectator_mode 0");
                     }
@@ -200,9 +216,9 @@ namespace MetaDota.DotaReplay
 
                     for (int j = noOfClips * i; j < Math.Min(data.data.Count, noOfClips * (i + 1)); j++)
                     {
-                        ticks = (int)data.data[j].Start- offset;
-                        ticks = Math.Max(ticks, prev+3*30);
-                        prev = (int)data.data[j].End + add*30;
+                        ticks = (int)data.data[j].Start - offset;
+                        ticks = Math.Max(ticks, prev + 3 * 30);
+                        prev = (int)data.data[j].End + add * 30;
                         cfg.Add($"bind {s2k.ElementAt(j % noOfClips).Key} \"demo_gototick {ticks}\"");
                     }
                     cfg.Add($"bind x \"endmovie\"");
@@ -241,11 +257,11 @@ namespace MetaDota.DotaReplay
                         //}
 
                         //if (j > data.data.Count * 3 / 4) add = 20;
-                        var wait = (int)(data.data[j].End - data.data[j].Start)/30+add;
+                        var wait = (int)(data.data[j].End - data.data[j].Start) / 30 + add;
 
                         await Task.Delay(wait * 1000);
 
-                        if (i == 0 && j%noOfClips == 0)
+                        if (i == 0 && j % noOfClips == 0)
                         {
                             _input.SendText("w");
                         }
@@ -284,6 +300,255 @@ namespace MetaDota.DotaReplay
 
                     YouTube();
                     _input.SendText("x");
+                }
+                YouTube1();
+
+                Twitch();
+                //_input.SendText("z");
+
+
+                Console.WriteLine("Enter any key to continue");
+                Console.ReadLine();
+
+                //check is in demo
+
+
+                //using (Process zipProcess = new Process())
+                //{
+                //    zipProcess.StartInfo.FileName = "ffmpeg.exe";
+                //    zipProcess.StartInfo.UseShellExecute = false;
+                //    zipProcess.StartInfo.RedirectStandardInput = true;
+                //    zipProcess.StartInfo.Arguments = $"-y -r 30 -i \"{Path.GetFullPath(DotaClient.dotaMoviePath)}\\%08d.jpg\" -i \"{Path.GetFullPath(DotaClient.dotaMoviePath)}\\.wav\" -c:v libx264 -c:a aac -strict experimental -b:a 192k -shortest \"{Path.GetFullPath(DotaClient.dotaMoviePath)}\\{generator.match_id}_{generator.account_id}.mp4\"";
+                //    zipProcess.Start();
+                //    zipProcess.WaitForExit();
+                //}
+                //File.Delete(Path.Combine(DotaClient.dotaCfgPath, "autoexec.cfg"));
+            }
+            generator.block = false;
+        }
+
+        private async Task PlayerChase(MDReplayGenerator generator)
+        {
+            offset = 4*30;
+            add = 0;
+            
+            //string keys = "bcdfghjklmnpvxz";
+            if (CancelRecording(generator))
+            {
+                YouTube1();
+
+                RECT rECT = new RECT();
+                while (!NativeMethods.GetWindowRect(Process.GetProcessesByName("dota2")[0].MainWindowHandle, ref rECT))
+                {
+                    await Task.Delay(1000);
+                }
+                int centerX = rECT.Left + (rECT.Right - rECT.Left) / 2;
+                int centerY = rECT.Top + (rECT.Bottom - rECT.Top) / 2;
+                Color pixelColor = MDTools.GetPixelColor(centerX, centerY);
+                int sameCount = 10;
+                while (sameCount > 0)
+                {
+                    Color curColor = MDTools.GetPixelColor(centerX, centerY);
+                    Console.WriteLine($"{curColor.ToArgb()} {centerX} {centerY}");
+                    if (curColor.ToArgb() != pixelColor.ToArgb())
+                    {
+                        pixelColor = curColor;
+                        sameCount--;
+                    }
+                    await Task.Delay(500);
+                }
+
+                string momentsPath = Path.Combine(ClientParams.DEMO_DIR, $"{generator.match_id}.json");
+                string json = File.ReadAllText(momentsPath);
+
+                var settings = new JsonSerializerSettings
+                {
+                    Error = (sender, args) =>
+                    {
+                        // Handle error here
+                        Console.WriteLine($"Error: {args.ErrorContext.Error.Message}");
+                        args.ErrorContext.Handled = true; // Bypass error
+                    }
+                };
+
+                var data = JsonConvert.DeserializeObject<Data>(json) ?? new Data();
+                string slot = "1", war_fog = "";
+                Random rnd = new Random();
+                slot = rnd.Next(0, 1).ToString();
+                // _prepareAnalystParams(generator, out hero_name, out slot, out war_fog);
+                if (generator.heroName != "123")
+                {
+                    //offset = 300;
+                }
+
+                int count = (data.data.Count % noOfClips != 0 ? data.data.Count / noOfClips : data.data.Count / noOfClips - 1);
+                int prev = 0;
+                float prev1 = 0;
+                for (int i = 0; i <= count; i++)
+                {
+                    List<string> cfg = new List<string>();
+                    //if(i == 0) cfg.Add("hud_toggle_visibility");
+                    int ticks = (int)data.data[noOfClips * i].Start - offset;
+
+                    if (i > 0) ticks = Math.Max(ticks, prev);
+
+                    if (true || i == 0 || (int)data.data[noOfClips * i].Start> (int)data.data[noOfClips * i - 1].End)
+                    {
+                        cfg.Add($"demo_gototick {ticks}");
+                    }
+
+                    //if (i == 0 && (generator.heroName != "123" || generator.heroName == "1234"))
+                    if (true)
+                    {
+                        if (generator.heroName != "1234")
+                        {
+                            if (data.data[noOfClips * i].Attackers is double)
+                            {
+                                slot = ((int)Convert.ToDouble(data.data[noOfClips * i].Slot) + 1).ToString();
+                            }
+                            else
+                            {
+                                slot = ((JArray)data.data[noOfClips * i].Attackers).First().ToString();
+                            }
+                        }
+                        cfg.Add($"dota_spectator_hero_index {slot}");
+                        cfg.Add($"dota_spectator_fog_of_war None");
+                        //cfg.Add($"dota_spectator_fog_of_war {war_fog}");
+                        //cfg.Add($"dota_spectator_mode 0");
+                        cfg.Add($"dota_spectator_mode 2");
+                        //cfg.Add($"dota_camera_distance 2000");
+                    }
+                    else if (generator.heroName == "123")
+                    {
+                        //cfg.Add($"dota_spectator_mode 0");
+                    }
+
+                    //cfg.Add($"startmovie ../../../../../movie/{generator.match_id}-{i} mp4");
+                    for (int j = noOfClips * i; j < Math.Min(data.data.Count, noOfClips * (i + 1)); j++)
+                    {
+                        data.data[j].Start -= offset;
+                        if (j > 0) data.data[j].Start = Math.Max(data.data[j].Start, prev);
+                        data.data[j].End += add * 30;
+                        prev = Math.Max((int)data.data[j].End, prev);
+                        ticks = (int)data.data[j].Start;
+                        cfg.Add($"bind {s2k.ElementAt(j % noOfClips).Key} \"demo_gototick {ticks}\"");
+                    }
+                    //cfg.Add($"bind x dota_camera_distance 1400");
+                    cfg.Add($"bind z \"quit\"");
+                    cfg.Add($"demo_resume");
+                    cfg.Add($"hideConsole");
+
+                    File.WriteAllLines($"{DotaClient.dotaCfgPath}/replayCfg.txt", cfg);
+
+                    _input.SendKey(Interceptor.Keys.BackslashPipe, KeyState.Down);
+                    _input.SendKey(Interceptor.Keys.BackslashPipe, KeyState.Up);
+                    await Task.Delay(1500);
+                    _input.KeyPressDelay = Program.config.GetKeyInputDelay();
+                    _input.SendText("exec replayCfg.txt");
+                    _input.SendKey(Interceptor.Keys.Enter, KeyState.Down);
+                    _input.SendKey(Interceptor.Keys.Enter, KeyState.Up);
+
+
+                    if (i == 0) Twitch();
+
+                    await Task.Delay(1000);
+
+                    SendAlt7();
+                    await Task.Delay(1000);
+                    YouTube();
+
+                    for (int j = noOfClips * i; j < Math.Min(data.data.Count, noOfClips * (i + 1)); j++)
+                    {
+                        //string key = keys[j % noOfClips].ToString();
+                        if (data.data[j].Start > prev1+60)
+                        {
+                            //Console.WriteLine(s2k.ElementAt(j % noOfClips).Value);
+                            _input.SendKey(s2k.ElementAt(j % noOfClips).Value);
+                        }
+                        prev1 = Math.Max(prev1, data.data[j].End);
+                        //if (j==0 || data.data[j].Start> data.data[j-1].End)
+                        //{
+                        //    _input.SendKey(s2k.ElementAt(j % noOfClips).Value);
+                        //}
+                        //else
+                        //{
+                        //    data.data[j-1].End = data.data[j - 1].Start;
+                        //}
+                        if (data.data[j].Attackers is double)
+                        {
+                            slot = ((int)Convert.ToDouble(data.data[j].Slot) + 1).ToString();
+                        }
+                        else
+                        {
+                            var attackers = ((JArray)data.data[j].Attackers);
+                            slot = ((int)Convert.ToDouble(attackers.First()) + 1).ToString();
+                            if(j< data.data.Count-1 && attackers.Count>1)
+                            {
+                                slot = ((int)Convert.ToDouble(attackers.First(x=> (int)Convert.ToDouble(x) != (int)Convert.ToDouble(data.data[j+1].Slot))) + 1).ToString();
+                            }
+                        }
+                        _input.SendText(slot);
+
+                        Thread.Sleep(1000);
+
+                        //Console.WriteLine("start");
+                        //SendAlt7();
+                        //int start = 0;
+                        //while (start == 0)
+                        //{
+                        //    start = GetTime(GetText());
+                        //    Thread.Sleep(100);
+                        //}
+
+                        //if (j > data.data.Count * 3 / 4) add = 20;
+                        var wait = (int)(data.data[j].End - data.data[j].Start) / 30;
+                        Console.WriteLine($"{wait}");
+
+                        if (wait > 0)
+                            await Task.Delay(wait * 1000);
+
+                        if (i == 0 && j % noOfClips == 0)
+                        {
+                            _input.SendText("w");
+                            //_input.SendText("x");
+                        }
+                        else if (j == 12)
+                        {
+                            _input.SendText("y");
+                        }
+
+                        //Stopwatch stopwatch = new Stopwatch();
+
+                        //// Start the stopwatch
+                        //stopwatch.Start();
+
+                        //while (j>2 && GetTime(GetText())< start+wait)
+                        //{
+                        //    Thread.Sleep(100);
+                        //    if (stopwatch.ElapsedMilliseconds > 30 * 1000) break;
+                        //}
+
+                        //stopwatch.Stop();
+                        //Console.WriteLine("End");
+                        //Thread.Sleep(1000);
+                        //SendAlt7();
+                        //Console.WriteLine($"start: {start} end: {end} wait:{wait} diff{end-start}");
+                    }
+
+                    if (i == count)
+                    {
+                        Console.WriteLine("last");
+                        //Thread.Sleep(1000);
+                        //SendAlt7();
+                        Console.WriteLine("Enter any key to continue");
+                        Console.ReadLine();
+                        //Thread.Sleep(30 * 1000);
+                        //SendAlt7();
+                    }
+                    Thread.Sleep(3000);
+
+                    SendAlt7();
+                    //_input.SendText("x");
                 }
                 YouTube1();
 
