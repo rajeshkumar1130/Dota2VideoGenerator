@@ -381,34 +381,48 @@ namespace MetaDota.DotaReplay
                     //offset = 300;
                 }
 
-                int count = (data.data.Count % noOfClips != 0 ? data.data.Count / noOfClips : data.data.Count / noOfClips - 1);
+                Event prevEvent = null;
+                float end = 0;
+                foreach(var d in data.data)
+                {
+                    d.Start -= offset;
+                    d.End += add * 30;
+                    if (prevEvent != null && end>d.Start)
+                    {
+                        data.data1[data.data1.Count - 1].Add(d);
+                    }
+                    else
+                    {
+                        data.data1.Add(new List<Event> { d });
+                    }
+                    end = Math.Max(end, d.End);
+                    prevEvent = d;
+                }
+
+                int count = (data.data1.Count % noOfClips != 0 ? data.data1.Count / noOfClips : data.data1.Count / noOfClips - 1);
                 int prev = 0;
                 float prev1 = 0;
                 for (int i = 0; i <= count; i++)
                 {
                     List<string> cfg = new List<string>();
                     //if(i == 0) cfg.Add("hud_toggle_visibility");
-                    int ticks = (int)data.data[noOfClips * i].Start - offset;
+                    int ticks = (int)data.data1[noOfClips * i].First().Start;
 
-                    if (i > 0) ticks = Math.Max(ticks, prev);
 
-                    if (true || i == 0 || (int)data.data[noOfClips * i].Start> (int)data.data[noOfClips * i - 1].End)
-                    {
-                        cfg.Add($"demo_gototick {ticks}");
-                    }
+                    cfg.Add($"demo_gototick {ticks}");
 
                     //if (i == 0 && (generator.heroName != "123" || generator.heroName == "1234"))
                     if (true)
                     {
                         if (generator.heroName != "1234")
                         {
-                            if (data.data[noOfClips * i].Attackers is double)
+                            if (data.data1[noOfClips * i].First().Attackers is double)
                             {
-                                slot = ((int)Convert.ToDouble(data.data[noOfClips * i].Slot) + 1).ToString();
+                                slot = ((int)Convert.ToDouble(data.data1[noOfClips * i].First().Slot) + 1).ToString();
                             }
                             else
                             {
-                                slot = ((JArray)data.data[noOfClips * i].Attackers).First().ToString();
+                                slot = ((JArray)data.data1[noOfClips * i].First().Attackers).First().ToString();
                             }
                         }
                         cfg.Add($"dota_spectator_hero_index {slot}");
@@ -424,13 +438,9 @@ namespace MetaDota.DotaReplay
                     }
 
                     //cfg.Add($"startmovie ../../../../../movie/{generator.match_id}-{i} mp4");
-                    for (int j = noOfClips * i; j < Math.Min(data.data.Count, noOfClips * (i + 1)); j++)
+                    for (int j = noOfClips * i; j < Math.Min(data.data1.Count, noOfClips * (i + 1)); j++)
                     {
-                        data.data[j].Start -= offset;
-                        if (j > 0) data.data[j].Start = Math.Max(data.data[j].Start, prev);
-                        data.data[j].End += add * 30;
-                        prev = Math.Max((int)data.data[j].End, prev);
-                        ticks = (int)data.data[j].Start;
+                        ticks = (int)data.data1[j].First().Start;
                         cfg.Add($"bind {s2k.ElementAt(j % noOfClips).Key} \"demo_gototick {ticks}\"");
                     }
                     //cfg.Add($"bind x dota_camera_distance 1400");
@@ -451,103 +461,106 @@ namespace MetaDota.DotaReplay
 
                     if (i == 0) Twitch();
 
-                    await Task.Delay(1000);
-
-                    SendAlt7();
+                    //await Task.Delay(1000);
+                    //SendAlt7();
+                    
                     await Task.Delay(1000);
                     YouTube();
 
-                    for (int j = noOfClips * i; j < Math.Min(data.data.Count, noOfClips * (i + 1)); j++)
+                    for (int j = noOfClips * i; j < Math.Min(data.data1.Count, noOfClips * (i + 1)); j++)
                     {
-                        //string key = keys[j % noOfClips].ToString();
-                        if (data.data[j].Start > prev1+60)
+                        _input.SendKey(s2k.ElementAt(j % noOfClips).Value);
+
+                        for (int k = 0;k<data.data1[j].Count;k++)
                         {
-                            //Console.WriteLine(s2k.ElementAt(j % noOfClips).Value);
-                            _input.SendKey(s2k.ElementAt(j % noOfClips).Value);
-                        }
-                        prev1 = Math.Max(prev1, data.data[j].End);
-                        //if (j==0 || data.data[j].Start> data.data[j-1].End)
-                        //{
-                        //    _input.SendKey(s2k.ElementAt(j % noOfClips).Value);
-                        //}
-                        //else
-                        //{
-                        //    data.data[j-1].End = data.data[j - 1].Start;
-                        //}
-                        if (data.data[j].Attackers is double)
-                        {
-                            slot = ((int)Convert.ToDouble(data.data[j].Slot) + 1).ToString();
-                        }
-                        else
-                        {
-                            var attackers = ((JArray)data.data[j].Attackers);
-                            slot = ((int)Convert.ToDouble(attackers.First()) + 1).ToString();
-                            if(j< data.data.Count-1 && attackers.Count>1)
+                            var e = data.data1[j][k];
+                            
+                            e.Start = Math.Max(e.Start, prev1);
+                            
+                            if (e.Attackers is double)
                             {
-                                slot = ((int)Convert.ToDouble(attackers.First(x=> (int)Convert.ToDouble(x) != (int)Convert.ToDouble(data.data[j+1].Slot))) + 1).ToString();
+                                slot = ((int)Convert.ToDouble(e.Slot) + 1).ToString();
                             }
+                            else
+                            {
+                                var attackers = ((JArray)e.Attackers);
+                                slot = ((int)Convert.ToDouble(attackers.First()) + 1).ToString();
+                                if (j < data.data1.Count - 1 && attackers.Count > 1)
+                                {
+                                    //slot = ((int)Convert.ToDouble(attackers.First(x => (int)Convert.ToDouble(x) != (int)Convert.ToDouble(data.data[j + 1].Slot))) + 1).ToString();
+                                }
+                            }
+                            _input.SendText(slot);
+                            if (k == 0)
+                            {
+                                Thread.Sleep(1000);
+                                SendAlt7();
+                            }
+
+
+                            //int start = 0;
+                            //while (start == 0)
+                            //{
+                            //    start = GetTime(GetText());
+                            //    Thread.Sleep(100);
+                            //}
+
+                            //if (j > data.data.Count * 3 / 4) add = 20;
+                            var wait = (int)(e.End - e.Start) / 30;
+                            Console.WriteLine($"{wait}");
+
+                            if (wait > 0)
+                                await Task.Delay(wait * 1000);
+
+                            if (i == 0 && j % noOfClips == 0)
+                            {
+                                _input.SendText("w");
+                                //_input.SendText("x");
+                            }
+                            else if (j == 12)
+                            {
+                                _input.SendText("y");
+                            }
+
+                            prev1 = Math.Max(prev1, e.End);
+
+
+                            //Stopwatch stopwatch = new Stopwatch();
+
+                            //// Start the stopwatch
+                            //stopwatch.Start();
+
+                            //while (j>2 && GetTime(GetText())< start+wait)
+                            //{
+                            //    Thread.Sleep(100);
+                            //    if (stopwatch.ElapsedMilliseconds > 30 * 1000) break;
+                            //}
+
+                            //stopwatch.Stop();
+                            //Console.WriteLine("End");
+                            
+                            //Console.WriteLine($"start: {start} end: {end} wait:{wait} diff{end-start}");
                         }
-                        _input.SendText(slot);
 
                         Thread.Sleep(1000);
+                        SendAlt7();
+                        //string key = keys[j % noOfClips].ToString();
 
-                        //Console.WriteLine("start");
-                        //SendAlt7();
-                        //int start = 0;
-                        //while (start == 0)
-                        //{
-                        //    start = GetTime(GetText());
-                        //    Thread.Sleep(100);
-                        //}
-
-                        //if (j > data.data.Count * 3 / 4) add = 20;
-                        var wait = (int)(data.data[j].End - data.data[j].Start) / 30;
-                        Console.WriteLine($"{wait}");
-
-                        if (wait > 0)
-                            await Task.Delay(wait * 1000);
-
-                        if (i == 0 && j % noOfClips == 0)
-                        {
-                            _input.SendText("w");
-                            //_input.SendText("x");
-                        }
-                        else if (j == 12)
-                        {
-                            _input.SendText("y");
-                        }
-
-                        //Stopwatch stopwatch = new Stopwatch();
-
-                        //// Start the stopwatch
-                        //stopwatch.Start();
-
-                        //while (j>2 && GetTime(GetText())< start+wait)
-                        //{
-                        //    Thread.Sleep(100);
-                        //    if (stopwatch.ElapsedMilliseconds > 30 * 1000) break;
-                        //}
-
-                        //stopwatch.Stop();
-                        //Console.WriteLine("End");
-                        //Thread.Sleep(1000);
-                        //SendAlt7();
-                        //Console.WriteLine($"start: {start} end: {end} wait:{wait} diff{end-start}");
                     }
 
                     if (i == count)
                     {
                         Console.WriteLine("last");
-                        //Thread.Sleep(1000);
-                        //SendAlt7();
+                        Thread.Sleep(1500);
+                        SendAlt7();
                         Console.WriteLine("Enter any key to continue");
                         Console.ReadLine();
-                        //Thread.Sleep(30 * 1000);
-                        //SendAlt7();
+                        Thread.Sleep(1500);
+                        SendAlt7();
                     }
-                    Thread.Sleep(3000);
+                    //Thread.Sleep(3000);
 
-                    SendAlt7();
+                    //SendAlt7();
                     //_input.SendText("x");
                 }
                 YouTube1();
