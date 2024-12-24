@@ -195,7 +195,7 @@ namespace MetaDota.DotaReplay
             }
 
             var mode = Program.configuration["AppSettings:Mode"];
-            if(mode == "2")
+            if(mode == "2" || mode == "1")
             {
                 url = $"http://localhost:8000/getHighlights2?match_id={matchId}&hero_name={hero_name}";
             }
