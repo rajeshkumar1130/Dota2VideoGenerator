@@ -384,6 +384,7 @@ namespace MetaDota.DotaReplay
                 };
 
                 var data = JsonConvert.DeserializeObject<Data>(json) ?? new Data();
+                data.data = data.data.OrderBy(x => x.End).ToList();
                 string slot = "1", war_fog = "";
                 Random rnd = new Random();
                 slot = rnd.Next(0, 1).ToString();
@@ -410,7 +411,7 @@ namespace MetaDota.DotaReplay
                     end = Math.Max(end, d.End);
                     prevEvent = d;
 
-                    if (d.Attackers is double) continue;
+                    if (d.Attackers == null || d.Attackers is double) continue;
 
                     foreach(var attacker in ((JArray)d.Attackers))
                     {
@@ -526,7 +527,7 @@ namespace MetaDota.DotaReplay
                         Thread.Sleep(200);
                         _input.SendKey(Interceptor.Keys.LeftShift);
 
-                        if (i == 0 && clipIndex % noOfClips == 0)
+                        if (i == 0 && clipIndex == 0)
                         {
                             _input.SendText("w");
                             //_input.SendText("x");
@@ -556,6 +557,7 @@ namespace MetaDota.DotaReplay
                                 _input.SendText(slot); 
                             }
 
+                            //if (clipIndex != 0 && k == 0)
                             if (k == 0)
                             {
                                 Thread.Sleep(1000);
@@ -598,6 +600,7 @@ namespace MetaDota.DotaReplay
                         }
 
                         Thread.Sleep(1000);
+                        //if(clipIndex != 0) SendAlt7();
                         SendAlt7();
                         //string key = keys[j % noOfClips].ToString();
 
@@ -718,7 +721,7 @@ namespace MetaDota.DotaReplay
                     end = Math.Max(end, d.End);
                     prevEvent = d;
 
-                    if (d.Attackers is double) continue;
+                    if (d.Attackers == null || d.Attackers is double) continue;
 
                     foreach (var attacker in ((JArray)d.Attackers))
                     {
