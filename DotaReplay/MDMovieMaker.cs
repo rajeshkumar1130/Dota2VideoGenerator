@@ -245,6 +245,8 @@ namespace MetaDota.DotaReplay
                     _input.SendKey(Interceptor.Keys.Enter, KeyState.Down);
                     _input.SendKey(Interceptor.Keys.Enter, KeyState.Up);
 
+                    Thread.Sleep(7000);
+
 
                     if (i == 0) Twitch();
 
@@ -255,9 +257,18 @@ namespace MetaDota.DotaReplay
                     {
                         //string key = keys[j % noOfClips].ToString();
                         _input.SendKey(s2k.ElementAt(j % noOfClips).Value);
+                        if (i == 0 && j % noOfClips == 0)
+                        {
+                            _input.SendText("w");
+                        }
+                        else if (j == 12)
+                        {
+                            _input.SendText("y");
+                        }
                         Thread.Sleep(1000);
                         //Console.WriteLine("start");
                         SendAlt7();
+
                         //int start = 0;
                         //while (start == 0)
                         //{
@@ -270,14 +281,7 @@ namespace MetaDota.DotaReplay
 
                         await Task.Delay(wait * 1000);
 
-                        if (i == 0 && j % noOfClips == 0)
-                        {
-                            _input.SendText("w");
-                        }
-                        else if (j == 12)
-                        {
-                            _input.SendText("y");
-                        }
+                        
 
                         //Stopwatch stopwatch = new Stopwatch();
 
@@ -522,9 +526,7 @@ namespace MetaDota.DotaReplay
                         slot = GetSlot(data, clipIndex, attacker:false);
                         _input.SendText(slot);
                         _input.SendText(slot);
-                        _input.SendText(slot);
-                        _input.SendText(slot);
-                        Thread.Sleep(200);
+                        Thread.Sleep(1000);
                         _input.SendKey(Interceptor.Keys.LeftShift);
 
                         if (i == 0 && clipIndex == 0)
@@ -541,18 +543,26 @@ namespace MetaDota.DotaReplay
                         for (int k = 0;k<data.data1[clipIndex].Count;k++)
                         {
                             var e = data.data1[clipIndex][k];
-                            
+                            var slots = GetSlots(data, clipIndex, k);
+
                             e.Start = Math.Max(e.Start, prev1);
                             var wait = (int)(e.End - e.Start) / 30;
+
+                            if (k < data.data1[clipIndex].Count - 1)
+                            {
+                                wait -= 1;
+                            }
+                            else if (k > 0)
+                            {
+                                wait += 3;
+                            }
+
 
                             slot = GetSlot(data, clipIndex, k, attacker: false);
                             Console.WriteLine($" ClipIndex = {clipIndex} slot = {slot} wait = {wait}");
 
                             if (wait > 0)
                             {
-                                _input.SendText(slot);
-                                Thread.Sleep(50);
-                                _input.SendText(slot); 
                                 _input.SendText(slot); 
                                 _input.SendText(slot); 
                             }
@@ -560,7 +570,7 @@ namespace MetaDota.DotaReplay
                             //if (clipIndex != 0 && k == 0)
                             if (k == 0)
                             {
-                                Thread.Sleep(1000);
+                                Thread.Sleep(500);
                                 SendAlt7();
                             }
 
@@ -575,9 +585,44 @@ namespace MetaDota.DotaReplay
                             //if (j > data.data.Count * 3 / 4) add = 20;
 
                             if (wait > 0)
-                                await Task.Delay(wait * 1000);
+                            {
+                                var interval = 3;
 
-                           
+                                var cameraControl = Program.configuration["AppSettings:CameraControl"];
+
+
+                                for (int l = 0;l<wait;l++)
+                                {
+                                    await Task.Delay(1000);
+                                    if(cameraControl == "auto")
+                                    {
+                                        if (l % interval == 0 && l < wait - 4)
+                                        {
+                                            _input.SendText(slot);
+                                            _input.SendText(slot);
+                                        }
+                                        else if(l == wait - 4)
+                                        {
+                                            //_input.SendText(slots[(l / interval) % slots.Count]);
+                                            _input.SendText(slots[0]);
+                                        }
+                                        //if (l % 4 == 0)
+                                        //{
+                                        //    _input.SendText(slots[(l / interval) % slots.Count]);
+                                        //}
+                                    }
+                                    else
+                                    {
+                                        interval = 6;
+                                        if (l>0 && l % interval == 0)
+                                        {
+                                            _input.SendText(slots[(l / interval) % slots.Count]);
+                                        }
+                                    }
+                                }
+                            }
+
+
 
                             prev1 = Math.Max(prev1, e.End);
 
@@ -956,6 +1001,27 @@ namespace MetaDota.DotaReplay
             }
 
             return slot;
+        }
+
+        List<string> GetSlots(Data data, int j, int k = 0)
+        {
+            List<string> slots = new List<string>();
+            var e = data.data1[j][k];
+
+            if (!(e.Attackers is double))
+            {
+                var attackers = ((JArray)e.Attackers);
+                foreach (var attacker in attackers)
+                {
+                    slots.Add((((int)Convert.ToDouble(attacker) + 1) % 10).ToString());
+                }
+            }
+            else
+            {
+                slots.Add((((int)Convert.ToDouble(e.Slot) + 1) % 10).ToString());
+            }
+
+            return slots;
         }
 
         string GetSlotByHighestKillCount(JArray attackers)
